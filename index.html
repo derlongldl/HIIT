@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>跑步教練 V5.0 - 亞索 800 專用版</title>
+<title>跑步教練 V5.0.1 - 亞索專用修正版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -16,7 +16,6 @@ th { background: #f8f9fa; padding: 8px 2px; border: 1px solid #dee2e6; }
 td { padding: 5px 2px; border: 1px solid #dee2e6; text-align: center; }
 input { width: 45px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
 .pace-disp { color: var(--info); font-weight: bold; font-family: monospace; }
-.footer-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; background: #fff; border-top: 1px solid #eee; font-size: 14px; }
 
 /* 跑步訓練畫面 */
 #trainingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
@@ -60,27 +59,26 @@ input { width: 45px; padding: 5px; text-align: center; border: 1px solid #ccc; b
 </div>
 
 <div class="card">
-  <h2>🏃 跑步教練 V5.0 - 亞索專用版</h2>
+  <h2>🏃 跑步教練 V5.0.1 - 亞索專用版</h2>
   <table>
     <thead>
       <tr><th>階段</th><th>BPM</th><th>秒數</th><th>距離(m)</th><th>跑速</th></tr>
     </thead>
-    <tbody id="configTable">
-      </tbody>
+    <tbody id="configTable"></tbody>
   </table>
 
   <div style="padding: 10px 0; border-bottom: 1px solid #eee;">
-    <b>間歇循環：</b><input id="loopCount" type="number" style="width:40px;"> <b>組</b>
+    <b>間歇循環：</b><input id="loopCount" type="number" oninput="saveAndCalc()"> <b>組</b>
     <span style="float:right;">預計：<b id="totalPlanTime" style="color:var(--primary)">0</b> 分 / <b id="totalPlanDist" style="color:var(--info)">0</b> km</span>
   </div>
 
   <div style="display:flex; justify-content: space-between; align-items: center; padding: 10px 0;">
     <div>
-        <b>GPS 門檻：</b><span id="baseThresDisp" style="color:var(--primary); font-weight:bold;">0.30</span>m
+        <b>GPS 門檻：</b><span id="baseThresDisp" style="color:var(--primary); font-weight:bold;">0.32</span>m
         <button onclick="adjThres(-1)" style="margin-left:5px;">－</button><button onclick="adjThres(1)">＋</button>
     </div>
     <div>
-        <b>步進：</b><input id="thresholdStep" type="number" step="0.01" style="width:45px;">
+        <b>步進：</b><input id="thresholdStep" type="number" step="0.01" style="width:45px;" oninput="saveAndCalc()">
     </div>
   </div>
   
@@ -96,14 +94,7 @@ input { width: 45px; padding: 5px; text-align: center; border: 1px solid #ccc; b
 const CONFIG_KEY = 'run_config_yasso_v5';
 const HISTORY_KEY = 'run_history_v464';
 const PHASES = ["熱身", "間歇", "衝刺", "恢復", "舒緩"];
-// 初始預設值 (對應您圖表的值)
-let config = { 
-    bpm: [180, 200, 210, 190, 180], 
-    sec: [240, 130, 130, 240, 240], 
-    dist: [400, 400, 400, 400, 400],
-    loops: 8, threshold: 0.32, step: 0.01 
-};
-
+let config = { bpm: [180, 200, 210, 190, 180], sec: [240, 130, 130, 240, 240], dist: [400, 400, 400, 400, 400], loops: 8, threshold: 0.32, step: 0.01 };
 let isRunning = false, totalDist = 0, elapsedSec = 0, audioCtx = null, watchId = null, timerId = null, trackPoints = [], wakeLock = null;
 
 function init() {
@@ -144,16 +135,11 @@ function saveAndCalc() {
         }
     });
 
-    // 計算總計
+    // 關鍵修正：計算總預計時間與里程
     let totalT = config.sec[0] + ((config.sec[1] + config.sec[2] + config.sec[3]) * config.loops) + config.sec[4];
     let totalD = config.dist[0] + ((config.dist[1] + config.dist[2] + config.dist[3]) * config.loops) + config.dist[4];
     document.getElementById('totalPlanTime').innerText = (totalT/60).toFixed(1);
-    document.getElementById('totalPlanDist').innerText = (totalD/1000).toFixed(1);
-}
-
-function adjThres(dir) {
-    config.threshold += (dir * config.step);
-    forceUpdateUI();
+    document.getElementById('totalPlanDist').innerText = (totalD/1000).toFixed(2);
 }
 
 function forceUpdateUI() {
@@ -164,8 +150,12 @@ function forceUpdateUI() {
     saveAndCalc();
 }
 
-// --- 以下為核心運行邏輯 (與 V4.6.7 同步) ---
+function adjThres(dir) {
+    config.threshold += (dir * config.step);
+    forceUpdateUI();
+}
 
+// --- 核心邏輯 ---
 async function toggleStart(isAuto) {
     isRunning = true; document.getElementById('trainingOverlay').style.display = 'flex';
     if ('wakeLock' in navigator) try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
@@ -189,7 +179,7 @@ async function startTrainingFlow(isAuto) {
         if(isAuto) stopAndSave();
         else {
             document.getElementById('statusTop').innerText = "● 續跑中";
-            while(isRunning) { playBeep(1000, 0.8, 0.07); await new Promise(r => setTimeout(r, 60000/config.bpm[4])); }
+            while(isRunning) { playBeep(950, 0.8, 0.07); await new Promise(r => setTimeout(r, 60000/config.bpm[4])); }
         }
     }
 }
@@ -221,7 +211,6 @@ function startGPS() {
                 if (d > config.threshold && d < 50) {
                     totalDist += d;
                     document.getElementById('bigDistance').innerText = (totalDist/1000).toFixed(3);
-                    if(totalDist > 5) document.getElementById('bigPace').innerText = formatTime(Math.floor(elapsedSec/(totalDist/1000)));
                 }
             }
             trackPoints.push({lat: pos.coords.latitude, lon: pos.coords.longitude, time: new Date().toISOString()});
@@ -231,11 +220,6 @@ function startGPS() {
 
 function stopAndSave() { 
     isRunning = false; clearInterval(timerId); if(watchId) navigator.geolocation.clearWatch(watchId); 
-    if(totalDist > 0) {
-        const records = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-        records.unshift({ id: Date.now(), date: new Date().toLocaleString(), dist: (totalDist/1000).toFixed(3), time: formatTime(elapsedSec), points: trackPoints, note: "亞索800訓練" });
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(records));
-    }
     location.reload(); 
 }
 

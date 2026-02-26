@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>跑步教練 V5.3.0 - 四軌節拍穩定版</title>
+<title>跑步教練 V5.3.1 - 節奏優化版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>
 :root { --primary: #ff6a00; --bg: #f0f2f5; --card: #ffffff; --danger: #e74c3c; --success: #2ecc71; --info: #3498db; }
@@ -14,42 +14,42 @@ th { background: #f8f9fa; padding: 8px 2px; border: 1px solid #dee2e6; }
 td { padding: 8px 2px; border: 1px solid #dee2e6; text-align: center; }
 input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
 #trainingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
-.big-val { font-size: 6rem; font-weight: 900; color: var(--primary); font-family: monospace; line-height: 1; margin: 10px 0; }
+.big-val { font-size: 6.5rem; font-weight: 900; color: var(--primary); font-family: monospace; line-height: 1; margin: 10px 0; }
 .btn-action { flex: 1; padding: 18px; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; color: #fff; cursor: pointer; }
-#lockOverlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 20000; flex-direction: column; justify-content: center; align-items: center; }
+#lockOverlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20000; flex-direction: column; justify-content: center; align-items: center; }
 </style>
 </head>
 <body>
 
 <div id="trainingOverlay">
-  <div id="lockOverlay"><div style="border:2px solid var(--primary); padding:20px; border-radius:40px;">🔒 長按 2 秒解鎖</div></div>
+  <div id="lockOverlay"><div style="border:3px solid var(--primary); padding:30px; border-radius:50px; font-size:1.5rem;">🔒 長按 2 秒解鎖</div></div>
   <div id="statusTop" style="font-size:2.5rem; color:var(--success); font-weight:bold;">● 準備中</div>
   <div id="phaseDetail" style="font-size:1.4rem; color:#ffeb3b; margin: 10px 0;">--</div>
   <div id="bigDistance" class="big-val">0.000</div>
-  <div id="soundIndicator" style="color:var(--info); margin-bottom:10px;">音效模式: A1</div>
+  <div id="soundIndicator" style="color:var(--info); font-weight:bold; margin-bottom:10px; background:rgba(255,255,255,0.1); padding:5px 15px; border-radius:20px;">音效模式: A1</div>
   <div style="display:flex; width:100%; justify-content:space-around; margin-bottom:20px;">
-      <div><div style="color:#888; font-size:0.8rem;">配速</div><div id="bigPace" style="font-size:2.2rem; font-family:monospace;">--:--</div></div>
-      <div><div style="color:#888; font-size:0.8rem;">時間</div><div id="bigElapsed" style="font-size:2.2rem; font-family:monospace;">00:00</div></div>
+      <div><div style="color:#888; font-size:0.9rem;">配速</div><div id="bigPace" style="font-size:2.5rem; font-family:monospace;">--:--</div></div>
+      <div><div style="color:#888; font-size:0.9rem;">時間</div><div id="bigElapsed" style="font-size:2.5rem; font-family:monospace;">00:00</div></div>
   </div>
   <div style="display:flex; gap:10px; width:100%;">
-      <button class="btn-action" style="background:#555;" onclick="enableLock()">鎖定</button>
+      <button class="btn-action" style="background:#444;" onclick="enableLock()">鎖定螢幕</button>
       <button class="btn-action" style="background:var(--danger);" onclick="stopAndSave()">結束儲存</button>
   </div>
 </div>
 
 <div class="card">
-  <h2>🏃 跑步教練 V5.3.0</h2>
+  <h2>🏃 跑步教練 V5.3.1</h2>
   <table>
     <thead><tr><th>階段</th><th>BPM</th><th>秒數</th><th>距離</th><th>跑速</th></tr></thead>
     <tbody id="configRows"></tbody>
   </table>
-  <div style="padding:10px 0; display:flex; justify-content:space-between; align-items:center;">
-    <span>循環組數：<input id="loopCount" type="number" oninput="uiUpdate()" style="width:45px;"></span>
-    <span style="font-size:12px; text-align:right;">預計：<br><b id="totalPlanTime">0</b>分 / <b id="totalPlanDist">0</b>km</span>
+  <div style="padding:10px 0; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee;">
+    <span>循環組數：<input id="loopCount" type="number" oninput="uiUpdate()" style="width:45px;"> 組</span>
+    <span style="font-size:12px; text-align:right;">預計：<b id="totalPlanTime" style="color:var(--primary)">0</b>分 / <b id="totalPlanDist" style="color:var(--info)">0</b>km</span>
   </div>
-  <div style="padding-bottom:10px; display:flex; justify-content:space-between;">
-    <span>GPS門檻：<b id="baseThresDisp">0.32</b>m</span>
-    <div><button onclick="adjThres(-1)">－</button><button onclick="adjThres(1)">＋</button></div>
+  <div style="padding:10px 0; display:flex; justify-content:space-between; align-items:center;">
+    <span>GPS門檻：<b id="baseThresDisp" style="color:var(--primary)">0.32</b>m</span>
+    <div><button onclick="adjThres(-1)" style="padding:5px 15px;">－</button><button onclick="adjThres(1)" style="padding:5px 15px;">＋</button></div>
   </div>
   <div style="display:flex; gap:10px;">
       <button onclick="toggleStart(true)" class="btn-action" style="background:var(--primary);">1 達標儲存</button>
@@ -57,15 +57,15 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
   </div>
 </div>
 
-<div class="card"><strong>紀錄</strong><div id="historyContainer"></div></div>
+<div class="card"><strong>歷史紀錄</strong><div id="historyContainer"></div></div>
 
 <script>
-const CONFIG_KEY = 'run_config_v530';
-const HISTORY_KEY = 'run_history_v530';
+const CONFIG_KEY = 'run_config_v531';
+const HISTORY_KEY = 'run_history_v531';
 const PHASES = ["熱身", "間歇", "衝刺", "恢復", "舒緩"];
 let config = { bpm:[180,200,210,190,180], sec:[240,130,130,240,240], dist:[400,400,400,400,400], loops:8, threshold:0.32 };
 let isRunning = false, totalDist = 0, elapsedSec = 0, audioCtx = null, timerId = null, watchId = null;
-let currentPhaseIdx = 0; // 0,1,2,3,4 用來切換音效1或2
+let currentPhaseIdx = 0; 
 
 function init() {
     const saved = localStorage.getItem(CONFIG_KEY);
@@ -115,21 +115,20 @@ async function toggleStart(isAuto) {
     timerId = setInterval(() => { elapsedSec++; document.getElementById('bigElapsed').innerText = formatTime(elapsedSec); }, 1000);
     startGPS();
     
-    // 執行流程
-    await runPhase(0, PHASES[0]); // 熱身
+    await runPhase(0, PHASES[0]); 
     for(let j=0; j<config.loops; j++) {
         if(!isRunning) break;
         await runPhase(1, `間歇${j+1}`);
         await runPhase(2, `衝刺${j+1}`);
         await runPhase(3, `恢復${j+1}`);
     }
-    if(isRunning) await runPhase(4, PHASES[4]); // 舒緩
+    if(isRunning) await runPhase(4, PHASES[4]); 
     
     if(isRunning) {
         if(isAuto) stopAndSave();
         else {
             document.getElementById('statusTop').innerText = "● 續跑中";
-            while(isRunning) { await playCycleBeep(config.bpm[4], 999); }
+            while(isRunning) { await playCycleBeep(config.bpm[4]); }
         }
     }
 }
@@ -142,28 +141,32 @@ async function runPhase(idx, label) {
     while(Date.now() < end && isRunning) {
         let rem = Math.round((end - Date.now())/1000);
         document.getElementById('phaseDetail').innerText = `節拍 ${config.bpm[idx]} | 剩 ${rem} 秒`;
-        await playCycleBeep(config.bpm[idx], rem);
+        await playCycleBeep(config.bpm[idx]);
     }
 }
 
-async function playCycleBeep(bpm, rem) {
+async function playCycleBeep(bpm) {
     let group = Math.floor(totalDist / 1000) % 2 === 0 ? 'A' : 'B';
     let sub = currentPhaseIdx % 2 === 0 ? '1' : '2';
     document.getElementById('soundIndicator').innerText = `音效模式: ${group}${sub}`;
     
-    // 321 倒數音效：最後三秒使用高頻音
-    let freq = 600; // 預設
-    if (rem <= 3 && rem > 0) freq = 1200; // 倒數叮叮聲
-    else {
-        if (group === 'A') freq = (sub === '1') ? 500 : 800;
-        else freq = (sub === '1') ? 1000 : 300; // B組音效
-    }
-
     const o = audioCtx.createOscillator(), g = audioCtx.createGain();
     o.connect(g); g.connect(audioCtx.destination);
-    o.type = (group === 'A') ? 'sine' : 'square'; // A組圓潤, B組清脆
+    
+    let freq = 600;
+    if (group === 'A') {
+        // A組使用三角波，穿透力強且音量較穩定
+        o.type = 'triangle';
+        freq = (sub === '1') ? 550 : 880;
+        g.gain.setValueAtTime(0.8, audioCtx.currentTime); // 調高增益
+    } else {
+        // B組使用方波，極具金屬感
+        o.type = 'square';
+        freq = (sub === '1') ? 1100 : 440;
+        g.gain.setValueAtTime(0.4, audioCtx.currentTime); // 方波天生大聲，增益調低
+    }
+
     o.frequency.value = freq;
-    g.gain.setValueAtTime(0.5, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
     o.start(); o.stop(audioCtx.currentTime + 0.1);
     
@@ -199,7 +202,7 @@ function stopAndSave() {
 
 function renderHistory() {
     const recs = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-    document.getElementById('historyContainer').innerHTML = recs.map(r => `<div style="border-bottom:1px solid #eee; padding:5px;">${r.date}<br><b>${r.dist}km | ${r.time}</b></div>`).join('');
+    document.getElementById('historyContainer').innerHTML = recs.map(r => `<div style="border-bottom:1px solid #eee; padding:8px;">${r.date}<br><b style="color:var(--primary);">${r.dist} km</b> | ⏱️ ${r.time}</div>`).join('');
 }
 
 function enableLock() { document.getElementById('lockOverlay').style.display = 'flex'; }
@@ -207,7 +210,7 @@ document.getElementById('lockOverlay').addEventListener('touchstart', e => {
     let t = setTimeout(()=> document.getElementById('lockOverlay').style.display='none', 2000);
     document.getElementById('lockOverlay').addEventListener('touchend', ()=> clearTimeout(t), {once:true});
 });
-function formatTime(s) { if(!s||s===Infinity) return "--"; return Math.floor(s/60).toString().padStart(2,'0')+":"+(s%60).toString().padStart(2,'0'); }
+function formatTime(s) { if(!s||s===Infinity||s<=0) return "--:--"; return Math.floor(s/60).toString().padStart(2,'0')+":"+(s%60).toString().padStart(2,'0'); }
 function haversine(lat1,lon1,lat2,lon2) { const R=6371000; const dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
 window.onload = init;
 </script>

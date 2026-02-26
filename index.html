@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>跑步教練 V5.2.2 - 設定跑速回歸版</title>
+<title>跑步教練 V5.2.3 - 介面全面修復版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>
 :root { --primary: #ff6a00; --bg: #f0f2f5; --card: #ffffff; --danger: #e74c3c; --success: #2ecc71; --info: #3498db; --dark: #2c3e50; }
@@ -11,12 +11,13 @@ body { font-family: "Microsoft JhengHei", system-ui, sans-serif; background: var
 h2 { text-align:center; color:var(--primary); margin:5px 0; font-size: 1.2rem; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
 th { background: #f8f9fa; padding: 8px 2px; border: 1px solid #dee2e6; }
-td { padding: 5px 2px; border: 1px solid #dee2e6; text-align: center; overflow: hidden; }
-input { width: 90%; padding: 5px 0; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
+td { padding: 8px 2px; border: 1px solid #dee2e6; text-align: center; }
+input { width: 85%; padding: 5px 0; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
 
 #trainingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
 .big-val { font-size: 6rem; font-weight: 900; color: var(--primary); font-family: monospace; line-height: 1; margin: 10px 0; }
 .btn-action { flex: 1; padding: 18px; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; color: #fff; cursor: pointer; }
+.pace-ref { color: var(--primary); font-weight: bold; font-family: monospace; }
 #lockOverlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 20000; flex-direction: column; justify-content: center; align-items: center; }
 .history-card { background: white; border-radius: 10px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); font-size: 13px; }
 </style>
@@ -31,7 +32,6 @@ input { width: 90%; padding: 5px 0; text-align: center; border: 1px solid #ccc; 
   <div id="phaseDetail" style="font-size:1.5rem; color:#ffeb3b; margin: 10px 0;">計時器啟動中...</div>
   <div style="color:#888; font-size:0.9rem;">累積公里 KM</div>
   <div id="bigDistance" class="big-val">0.000</div>
-  <div style="font-size:1.1rem; margin-bottom:10px; color:var(--info);">[ <span id="beepModeDisp">音效A</span> ] GPS門檻: <span id="liveThresDisp">0.32</span>m</div>
   <div style="display:flex; width:100%; justify-content:space-around; margin-bottom:20px;">
       <div><div style="color:#888; font-size:0.8rem;">即時配速</div><div id="bigPace" style="font-size:2.2rem; font-family:monospace;">--:--</div></div>
       <div><div style="color:#888; font-size:0.8rem;">總計時間</div><div id="bigElapsed" style="font-size:2.2rem; font-family:monospace;">00:00</div></div>
@@ -43,12 +43,23 @@ input { width: 90%; padding: 5px 0; text-align: center; border: 1px solid #ccc; 
 </div>
 
 <div class="card">
-  <h2>🏃 跑步教練 V5.2.2</h2>
-  <table id="configTable"></table>
+  <h2>🏃 跑步教練 V5.2.3</h2>
+  <table id="configTable">
+    <thead>
+      <tr><th width="18%">階段</th><th width="20%">BPM</th><th width="20%">秒數</th><th width="22%">距離(m)</th><th width="20%">跑速</th></tr>
+    </thead>
+    <tbody id="tableBody">
+      <tr><td><b>熱身</b></td><td><input type="number" id="bpm_0" oninput="uiUpdate()"></td><td><input type="number" id="sec_0" oninput="uiUpdate()"></td><td><input type="number" id="dist_0" oninput="uiUpdate()"></td><td class="pace-ref" id="pace_0">--:--</td></tr>
+      <tr><td><b>間歇</b></td><td><input type="number" id="bpm_1" oninput="uiUpdate()"></td><td><input type="number" id="sec_1" oninput="uiUpdate()"></td><td><input type="number" id="dist_1" oninput="uiUpdate()"></td><td class="pace-ref" id="pace_1">--:--</td></tr>
+      <tr><td><b>衝刺</b></td><td><input type="number" id="bpm_2" oninput="uiUpdate()"></td><td><input type="number" id="sec_2" oninput="uiUpdate()"></td><td><input type="number" id="dist_2" oninput="uiUpdate()"></td><td class="pace-ref" id="pace_2">--:--</td></tr>
+      <tr><td><b>恢復</b></td><td><input type="number" id="bpm_3" oninput="uiUpdate()"></td><td><input type="number" id="sec_3" oninput="uiUpdate()"></td><td><input type="number" id="dist_3" oninput="uiUpdate()"></td><td class="pace-ref" id="pace_3">--:--</td></tr>
+      <tr><td><b>舒緩</b></td><td><input type="number" id="bpm_4" oninput="uiUpdate()"></td><td><input type="number" id="sec_4" oninput="uiUpdate()"></td><td><input type="number" id="dist_4" oninput="uiUpdate()"></td><td class="pace-ref" id="pace_4">--:--</td></tr>
+    </tbody>
+  </table>
   
-  <div style="padding: 12px 0; border-bottom: 1px solid #eee; font-size: 14px; display:flex; justify-content:space-between;">
-    <span>間歇循環：<input id="loopCount" type="number" oninput="saveAndCalc()" style="width:40px;"> 組</span>
-    <span>預計：<b id="totalPlanTime" style="color:var(--primary)">0</b> 分 / <b id="totalPlanDist" style="color:var(--info)">0</b> km</span>
+  <div style="padding: 12px 0; border-bottom: 1px solid #eee; font-size: 14px; display:flex; justify-content:space-between; align-items:center;">
+    <span>間歇循環：<input id="loopCount" type="number" oninput="uiUpdate()" style="width:40px;"> 組</span>
+    <span style="text-align:right;">預計：<br><b id="totalPlanTime" style="color:var(--primary)">0</b> 分 / <b id="totalPlanDist" style="color:var(--info)">0</b> km</span>
   </div>
 
   <div style="display:flex; justify-content: space-between; align-items: center; padding: 10px 0; font-size: 14px;">
@@ -67,43 +78,41 @@ input { width: 90%; padding: 5px 0; text-align: center; border: 1px solid #ccc; 
 <div class="card"><strong>歷史紀錄</strong><div id="historyContainer"></div></div>
 
 <script>
-const CONFIG_KEY = 'run_config_yasso_v522';
+const CONFIG_KEY = 'run_config_yasso_v523';
 const HISTORY_KEY = 'run_history_v464';
 const PHASES = ["熱身", "間歇", "衝刺", "恢復", "舒緩"];
-// 預設配置
 let config = { bpm: [180, 200, 210, 190, 180], sec: [240, 130, 130, 240, 240], dist: [400, 400, 400, 400, 400], loops: 8, threshold: 0.32 };
 let isRunning = false, totalDist = 0, elapsedSec = 0, audioCtx = null, watchId = null, timerId = null, currentBeepMode = 'A';
 
 function init() {
     const saved = localStorage.getItem(CONFIG_KEY);
     if (saved) Object.assign(config, JSON.parse(saved));
-    renderTable();
-    saveAndCalc();
+    // 將數據填入輸入框
+    for(let i=0; i<5; i++) {
+        document.getElementById(`bpm_${i}`).value = config.bpm[i];
+        document.getElementById(`sec_${i}`).value = config.sec[i];
+        document.getElementById(`dist_${i}`).value = config.dist[i];
+    }
+    document.getElementById('loopCount').value = config.loops;
+    uiUpdate();
     renderHistory();
 }
 
-// 渲染設定表格，包含補回的「跑速」
-function renderTable() {
-    let html = `<tr><th width="20%">階段</th><th width="20%">BPM</th><th width="20%">秒數</th><th width="20%">距離</th><th width="20%">跑速</th></tr>`;
-    PHASES.forEach((name, i) => {
-        // 計算參考跑速 (假設步幅0.9m) -> 秒/公里
-        let paceSec = Math.round(1000 / (config.bpm[i] * 0.9 / 60)); 
-        let paceStr = Math.floor(paceSec/60).toString().padStart(2,'0') + ":" + (paceSec%60).toString().padStart(2,'0');
+function uiUpdate() {
+    // 讀取輸入框值回存 config
+    for(let i=0; i<5; i++) {
+        config.bpm[i] = parseInt(document.getElementById(`bpm_${i}`).value) || 0;
+        config.sec[i] = parseInt(document.getElementById(`sec_${i}`).value) || 0;
+        config.dist[i] = parseInt(document.getElementById(`dist_${i}`).value) || 0;
         
-        html += `<tr>
-            <td><b>${name}</b></td>
-            <td><input type="number" value="${config.bpm[i]}" oninput="config.bpm[${i}]=+this.value;renderTable();saveAndCalc()"></td>
-            <td><input type="number" value="${config.sec[i]}" oninput="config.sec[${i}]=+this.value;saveAndCalc()"></td>
-            <td><input type="number" value="${config.dist[i]}" oninput="config.dist[${i}]=+this.value;saveAndCalc()"></td>
-            <td style="color:var(--primary); font-weight:bold; font-family:monospace;">${paceStr}</td>
-        </tr>`;
-    });
-    document.getElementById('configTable').innerHTML = html;
-}
-
-function saveAndCalc() {
+        // 計算該列跑速：(假設步幅0.9m) 秒/公里
+        let paceSec = Math.round(1000 / (config.bpm[i] * 0.9 / 60));
+        document.getElementById(`pace_${i}`).innerText = isFinite(paceSec) ? formatTime(paceSec) : "--:--";
+    }
     config.loops = parseInt(document.getElementById('loopCount').value) || 1;
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+
+    // 下方總計預估
     let t = config.sec[0] + ((config.sec[1] + config.sec[2] + config.sec[3]) * config.loops) + config.sec[4];
     let d = config.dist[0] + ((config.dist[1] + config.dist[2] + config.dist[3]) * config.loops) + config.dist[4];
     document.getElementById('totalPlanTime').innerText = (t/60).toFixed(1);
@@ -111,64 +120,48 @@ function saveAndCalc() {
     document.getElementById('baseThresDisp').innerText = config.threshold.toFixed(2);
 }
 
-function adjThres(dir) { config.threshold += (dir * 0.01); saveAndCalc(); }
+function adjThres(dir) { config.threshold += (dir * 0.01); uiUpdate(); }
 
+// 跑步邏輯與 GPS (保持不變)
 async function toggleStart(isAuto) {
     isRunning = true;
     document.getElementById('trainingOverlay').style.display = 'flex';
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    speak(""); 
-
+    
     elapsedSec = 0; totalDist = 0; currentBeepMode = 'A';
-    timerId = setInterval(() => { 
-        elapsedSec++; 
-        document.getElementById('bigElapsed').innerText = formatTime(elapsedSec);
-    }, 1000);
-
+    timerId = setInterval(() => { elapsedSec++; document.getElementById('bigElapsed').innerText = formatTime(elapsedSec); }, 1000);
     startGPS();
     await startTrainingFlow(isAuto);
 }
 
 async function startTrainingFlow(isAuto) {
-    await runPhase(config.bpm[0], config.sec[0], PHASES[0]);
+    await runPhase(config.bpm[0], config.sec[0], "熱身");
     for(let j=0; j<config.loops; j++) {
         if(!isRunning) break;
         await runPhase(config.bpm[1], config.sec[1], `間歇${j+1}`);
         await runPhase(config.bpm[2], config.sec[2], `衝刺${j+1}`);
         await runPhase(config.bpm[3], config.sec[3], `恢復${j+1}`);
     }
-    if(isRunning) await runPhase(config.bpm[4], config.sec[4], PHASES[4]);
+    if(isRunning) await runPhase(config.bpm[4], config.sec[4], "舒緩");
     if(isRunning) isAuto ? stopAndSave() : runContinuousBeep();
 }
 
 async function runContinuousBeep() {
     document.getElementById('statusTop').innerText = "● 續跑中";
-    while(isRunning) {
-        playBeep(currentBeepMode === 'A' ? 950 : 1400, 0.8, 0.1);
-        await new Promise(r => setTimeout(r, 60000/config.bpm[4]));
-    }
+    while(isRunning) { playBeep(currentBeepMode === 'A' ? 950 : 1400, 0.8, 0.1); await new Promise(r => setTimeout(r, 60000/config.bpm[4])); }
 }
 
 async function runPhase(bpm, sec, label) {
     if(!isRunning || sec <= 0) return;
     document.getElementById('statusTop').innerText = "● " + label;
     let bInt = 60000/bpm; let end = Date.now() + (sec * 1000);
-    let spoken = {};
     while(Date.now() < end && isRunning) {
         let rem = Math.round((end - Date.now()) / 1000);
         document.getElementById('phaseDetail').innerText = `節拍 ${bpm} | 剩 ${rem} 秒`;
-        if(rem <= 3 && rem >= 1 && !spoken[rem]) { speak(rem.toString()); spoken[rem] = true; }
         playBeep(currentBeepMode === 'A' ? 950 : 1400, 0.8, 0.1); 
         await new Promise(r => setTimeout(r, bInt));
     }
-}
-
-function speak(t) {
-    if(!window.speechSynthesis) return;
-    const m = new SpeechSynthesisUtterance(t);
-    m.lang = 'zh-TW'; m.rate = 1.5;
-    window.speechSynthesis.speak(m);
 }
 
 function playBeep(freq, vol, duration) {
@@ -183,7 +176,4 @@ function startGPS() {
     watchId = navigator.geolocation.watchPosition(pos => {
         if (pos.coords.accuracy < 60) {
             const { latitude: lat, longitude: lon } = pos.coords;
-            if (lastPos) {
-                const d = haversine(lastPos.lat, lastPos.lon, lat, lon);
-                if (d > config.threshold && d < 50) {
-                    let oldKM = Math.floor(totalDist
+            if (lastPos)

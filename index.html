@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>跑步教練 V5.3.6 - 備註門檻強化版</title>
+<title>跑步教練 V5.3.7 - 自動化紀錄版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -24,7 +24,7 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 #mapModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 30000; flex-direction: column; }
 #map { flex-grow: 1; width: 100%; }
 .control-row { padding: 10px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
-.note-text { font-size: 12px; color: #666; font-style: italic; background: #f9f9f9; padding: 5px; border-radius: 4px; margin-top: 5px; display: none; }
+.note-text { font-size: 12px; color: #666; font-style: italic; background: #f9f9f9; padding: 5px; border-radius: 4px; margin-top: 5px; }
 </style>
 </head>
 <body>
@@ -54,7 +54,7 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 </div>
 
 <div class="card">
-  <h2>🏃 跑步教練 V5.3.6</h2>
+  <h2>🏃 跑步教練 V5.3.7</h2>
   <table>
     <thead><tr><th>階段</th><th>BPM</th><th>秒數</th><th>距離</th><th>跑速</th></tr></thead>
     <tbody id="configRows"></tbody>
@@ -76,7 +76,7 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 <div class="card"><strong>歷史紀錄</strong><div id="historyContainer"></div></div>
 
 <script>
-const CONFIG_KEY = 'run_config_v536';
+const CONFIG_KEY = 'run_config_v537';
 const HISTORY_KEY = 'run_history_v534';
 const PHASES = ["熱身", "間歇", "衝刺", "恢復", "舒緩"];
 let config = { bpm:[180,200,210,190,180], sec:[240,130,130,240,240], dist:[400,400,400,400,400], loops:8, threshold:0.32 };
@@ -192,11 +192,22 @@ function startGPS() {
     }, null, {enableHighAccuracy:true});
 }
 
-function stopAndSave() {
+async function stopAndSave() {
     isRunning = false; clearInterval(timerId); navigator.geolocation.clearWatch(watchId);
+    let autoNote = "";
+    if(trackPoints.length > 0) {
+        const p = trackPoints[0];
+        try {
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${p.lat}&lon=${p.lon}&format=json`).then(res => res.json());
+            const weatherRes = await fetch(`https://www.7timer.info/bin/api.pl?lon=${p.lon}&lat=${p.lat}&product=civil&output=json`).then(res => res.json());
+            const addr = geoRes.display_name.split(',')[0] || "未知地點";
+            const weather = weatherRes.dataseries[0].weather || "未知天氣";
+            autoNote = `📍 ${addr} | ☁️ ${weather}`;
+        } catch(e) { autoNote = "自動偵測失敗"; }
+    }
     if(totalDist > 0.01) {
         const recs = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-        recs.unshift({ id: Date.now(), date: new Date().toLocaleString(), dist: (totalDist/1000).toFixed(3), time: formatTime(elapsedSec), points: trackPoints, thres: config.threshold.toFixed(2), note: "" });
+        recs.unshift({ id: Date.now(), date: new Date().toLocaleString(), dist: (totalDist/1000).toFixed(3), time: formatTime(elapsedSec), points: trackPoints, thres: config.threshold.toFixed(2), note: autoNote });
         localStorage.setItem(HISTORY_KEY, JSON.stringify(recs));
     }
     location.reload();
@@ -211,7 +222,7 @@ function renderHistory() {
                 <span>📡 Thres: ${r.thres || '--'}m</span>
             </div>
             <div style="margin:5px 0;"><b style="font-size:1.2rem; color:var(--primary);">${r.dist} km | ${r.time}</b></div>
-            <div id="note_${r.id}" class="note-text" style="${r.note ? 'display:block' : ''}">${r.note || ''}</div>
+            <div id="note_${r.id}" class="note-text">${r.note || '無備註'}</div>
             <div class="history-btns">
                 <button class="btn-sm" style="background:var(--info);" onclick="viewTrack(${r.id})">軌跡</button>
                 <button class="btn-sm" style="background:var(--note);" onclick="editNote(${r.id})">備註</button>
@@ -226,13 +237,8 @@ function renderHistory() {
 function editNote(id) {
     let recs = JSON.parse(localStorage.getItem(HISTORY_KEY));
     let idx = recs.findIndex(r => r.id === id);
-    let oldNote = recs[idx].note || "";
-    let newNote = prompt("輸入備註 (地點/天氣等):", oldNote);
-    if(newNote !== null) {
-        recs[idx].note = newNote;
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(recs));
-        renderHistory();
-    }
+    let newNote = prompt("修改備註:", recs[idx].note);
+    if(newNote !== null) { recs[idx].note = newNote; localStorage.setItem(HISTORY_KEY, JSON.stringify(recs)); renderHistory(); }
 }
 
 function viewTrack(id) {

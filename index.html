@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>跑步教練 V5.3.9 - 經典邏輯回歸版</title>
+<title>跑步教練 V5.4.0 - 全功能修復版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -19,18 +19,19 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 .big-val { font-size: 6.5rem; font-weight: 900; color: var(--primary); font-family: monospace; line-height: 1; margin: 10px 0; }
 .btn-action { flex: 1; padding: 18px; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; color: #fff; cursor: pointer; }
 
-/* 備註編輯器 */
+/* 備註彈窗 */
 #noteModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 30000; justify-content: center; align-items: center; }
 .note-box { background: white; width: 85%; border-radius: 15px; padding: 20px; }
 #noteArea { width: 100%; height: 150px; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
 
 .history-card { background: white; border-radius: 10px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .history-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-.btn-sm { flex: 1; min-width: 55px; padding: 10px 2px; font-size: 11px; border-radius: 6px; border: none; color: white; font-weight: bold; }
+.btn-sm { flex: 1; min-width: 50px; padding: 10px 2px; font-size: 11px; border-radius: 6px; border: none; color: white; font-weight: bold; }
 #mapModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 30000; flex-direction: column; }
 #map { flex-grow: 1; width: 100%; }
 .control-row { padding: 10px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
 .note-display { font-size: 12px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 6px; margin-top: 8px; line-height: 1.5; white-space: pre-wrap; }
+#kmIndicator { font-weight:bold; color:var(--info); margin-bottom: 5px; }
 </style>
 </head>
 <body>
@@ -40,16 +41,16 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
         <h3>📝 編輯跑步備註</h3>
         <textarea id="noteArea"></textarea>
         <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="closeNote()" style="flex:1; padding:12px; background:#888; color:white; border:none; border-radius:8px;">取消</button>
-            <button onclick="saveNote()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px;">儲存</button>
+            <button onclick="closeNote()" style="flex:1; padding:12px; background:#888; border:none; border-radius:8px; color:white;">取消</button>
+            <button onclick="saveNote()" style="flex:1; padding:12px; background:var(--success); border:none; border-radius:8px; color:white;">儲存</button>
         </div>
     </div>
 </div>
 
 <div id="mapModal">
-    <div style="padding:15px; background:var(--primary); color:white; text-align:center; font-weight:bold;">運動軌跡回顧</div>
+    <div style="padding:15px; background:var(--primary); color:white; text-align:center; font-weight:bold;">軌跡回顧</div>
     <div id="map"></div>
-    <button onclick="closeMap()" style="padding:15px; width:100%; background:#444; color:white; border:none; font-size:1.1rem;">關閉地圖</button>
+    <button onclick="closeMap()" style="padding:15px; width:100%; background:#444; color:white; border:none;">關閉地圖</button>
 </div>
 
 <div id="trainingOverlay">
@@ -59,18 +60,19 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
     <div id="statusTop" style="font-size:2.5rem; color:var(--success); font-weight:bold;">● 準備中</div>
     <div id="phaseDetail" style="font-size:1.4rem; color:#ffeb3b; margin: 10px 0;">--</div>
     <div id="bigDistance" class="big-val">0.000</div>
+    <div id="kmIndicator">第 1 公里 (正相)</div>
     <div style="display:flex; width:100%; justify-content:space-around; margin: 15px 0;">
         <div><div style="color:#888; font-size:0.9rem;">配速</div><div id="bigPace" style="font-size:2.5rem; font-family:monospace;">--:--</div></div>
         <div><div style="color:#888; font-size:0.9rem;">時間</div><div id="bigElapsed" style="font-size:2.5rem; font-family:monospace;">00:00</div></div>
     </div>
     <div style="display:flex; gap:10px; width:100%;">
-        <button class="btn-action" style="background: var(--note);" onclick="enableLock()">開啟鎖定</button>
-        <button class="btn-action" style="background: var(--danger);" onclick="stopAndSave()">結束儲存</button>
+        <button class="btn-action" style="background:var(--note);" onclick="enableLock()">開啟鎖定</button>
+        <button class="btn-action" style="background:var(--danger);" onclick="stopAndSave()">結束儲存</button>
     </div>
 </div>
 
 <div class="card">
-  <h2>🏃 跑步教練 V5.3.9</h2>
+  <h2>🏃 跑步教練 V5.4.0</h2>
   <table>
     <thead><tr><th>階段</th><th>BPM</th><th>秒數</th><th>距離</th></tr></thead>
     <tbody id="configRows"></tbody>
@@ -92,12 +94,12 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 <div class="card"><strong>歷史紀錄</strong><div id="historyContainer"></div></div>
 
 <script>
-const CONFIG_KEY = 'run_config_v539';
-const HISTORY_KEY = 'run_history_v464'; 
+const CONFIG_KEY = 'run_config_v540';
+const HISTORY_KEY = 'run_history_v464';
 const PHASES = ["熱身", "間歇", "衝刺", "恢復", "舒緩"];
 let config = { bpm:[180,205,215,195,180], sec:[180,60,60,120,180], dist:[400,400,400,400,400], loops:8, threshold:0.32 };
 let isRunning = false, totalDist = 0, elapsedSec = 0, audioCtx = null, timerId = null, watchId = null, trackPoints = [], currentEditingId = null;
-let startNote = { location: "獲取中...", weather: "獲取中..." };
+let currentPhaseIdx = 0, startNote = { location: "獲取中...", weather: "獲取中..." };
 
 function init() {
     const saved = localStorage.getItem(CONFIG_KEY);
@@ -139,7 +141,6 @@ async function toggleStart(isAuto) {
     timerId = setInterval(() => { elapsedSec++; document.getElementById('bigElapsed').innerText = formatTime(elapsedSec); }, 1000);
     startGPS();
     
-    // 執行訓練流程
     await runPhase(0, PHASES[0]); 
     for(let j=0; j<config.loops; j++) {
         if(!isRunning) break;
@@ -147,39 +148,46 @@ async function toggleStart(isAuto) {
     }
     if(isRunning) await runPhase(4, PHASES[4]); 
 
-    // 訓練結束判斷 (同 4.6.7 邏輯)
     if(isRunning) {
-        if(isAuto) {
-            stopAndSave();
-        } else {
+        if(isAuto) stopAndSave();
+        else {
             document.getElementById('statusTop').innerText = "● 續跑中";
-            while(isRunning) {
-                playBeep(config.bpm[4]);
-                await new Promise(r => setTimeout(r, 60000/config.bpm[4]));
-            }
+            while(isRunning) { await playCycleBeep(config.bpm[4]); }
         }
     }
 }
 
 async function runPhase(idx, label) {
     if(!isRunning) return;
+    currentPhaseIdx = idx;
     document.getElementById('statusTop').innerText = "● " + label;
     let end = Date.now() + config.sec[idx]*1000;
     while(Date.now() < end && isRunning) {
         let rem = Math.round((end - Date.now())/1000);
         document.getElementById('phaseDetail').innerText = `節拍 ${config.bpm[idx]} | 剩 ${rem} 秒`;
-        playBeep(config.bpm[idx]);
-        await new Promise(r => setTimeout(r, 60000/config.bpm[idx]));
+        await playCycleBeep(config.bpm[idx]);
     }
 }
 
-function playBeep(bpm) {
+async function playCycleBeep(bpm) {
     const o = audioCtx.createOscillator(), g = audioCtx.createGain();
     o.connect(g); g.connect(audioCtx.destination);
-    o.type = 'square'; o.frequency.value = 1000;
-    g.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    o.type = 'square';
+    
+    let km = Math.floor(totalDist / 1000);
+    let isEvenKm = (km % 2 !== 0); 
+    document.getElementById('kmIndicator').innerText = `第 ${km + 1} 公里 (${isEvenKm ? '音頻反轉' : '正相'})`;
+
+    // 階段判定：奇數階段(0,2,4) vs 偶數階段(1,3)
+    let isOddPhase = (currentPhaseIdx % 2 === 0);
+    if (isEvenKm) isOddPhase = !isOddPhase;
+
+    if (isOddPhase) { o.frequency.value = 600; g.gain.setValueAtTime(0.8, audioCtx.currentTime); } 
+    else { o.frequency.value = 1000; g.gain.setValueAtTime(0.4, audioCtx.currentTime); }
+
     g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
     o.start(); o.stop(audioCtx.currentTime + 0.1);
+    await new Promise(r => setTimeout(r, 60000/bpm));
 }
 
 function startGPS() {
@@ -197,7 +205,7 @@ function startGPS() {
                 if(d > config.threshold && d < 50) {
                     totalDist += d;
                     document.getElementById('bigDistance').innerText = (totalDist/1000).toFixed(3);
-                    if(totalDist > 5) document.getElementById('bigPace').innerText = formatTime(Math.floor(elapsedSec/(totalDist/1000)));
+                    if(totalDist > 10) document.getElementById('bigPace').innerText = formatTime(Math.floor(elapsedSec/(totalDist/1000)));
                 }
             }
             last = {lat, lon};
@@ -228,6 +236,7 @@ function renderHistory() {
             <div class="history-btns">
                 <button class="btn-sm" style="background:var(--info);" onclick="viewTrack(${r.id})">軌跡</button>
                 <button class="btn-sm" style="background:var(--note);" onclick="editNote(${r.id})">備註</button>
+                <button class="btn-sm" style="background:var(--success);" onclick="editDist(${r.id})">修正</button>
                 <button class="btn-sm" style="background:var(--dark);" onclick="exportGPX(${r.id})">匯出</button>
                 <button class="btn-sm" style="background:var(--danger);" onclick="deleteRec(${r.id})">刪除</button>
             </div>
@@ -235,6 +244,16 @@ function renderHistory() {
     `).join('');
 }
 
+function editDist(id) {
+    let recs = JSON.parse(localStorage.getItem(HISTORY_KEY));
+    let idx = recs.findIndex(r => r.id === id);
+    let newVal = prompt("修正里程 (km):", recs[idx].dist);
+    if(newVal !== null) {
+        recs[idx].dist = parseFloat(newVal).toFixed(3);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(recs));
+        renderHistory();
+    }
+}
 function editNote(id) { 
     currentEditingId = id; 
     let rec = JSON.parse(localStorage.getItem(HISTORY_KEY)).find(r => r.id === id);
@@ -262,8 +281,8 @@ function closeMap() { document.getElementById('mapModal').style.display = 'none'
 function deleteRec(id) { if(confirm("確定刪除？")) { let recs = JSON.parse(localStorage.getItem(HISTORY_KEY)).filter(r => r.id !== id); localStorage.setItem(HISTORY_KEY, JSON.stringify(recs)); renderHistory(); } }
 function exportGPX(id) {
     const r = JSON.parse(localStorage.getItem(HISTORY_KEY)).find(r => r.id === id);
-    let gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="RunCoach"><trk><trkseg>`;
-    r.points.forEach(p => { gpx += `<trkpt lat="${p.lat}" lon="${p.lon}"><time>${p.time}</time></trkpt>`; });
+    let gpx = `<?xml version=\"1.0\" encoding=\"UTF-8\"?><gpx version=\"1.1\" creator=\"RunCoach\"><trk><trkseg>`;
+    r.points.forEach(p => { gpx += `<trkpt lat=\"${p.lat}\" lon=\"${p.lon}\"><time>${p.time}</time></trkpt>`; });
     gpx += `</trkseg></trk></gpx>`;
     const blob = new Blob([gpx], { type: 'application/gpx+xml' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Run_${id}.gpx`; a.click();

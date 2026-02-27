@@ -2,12 +2,12 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>跑步教練 V5.3.5 - 完整門檻回歸版</title>
+<title>跑步教練 V5.3.6 - 備註門檻強化版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-:root { --primary: #ff6a00; --bg: #f0f2f5; --card: #ffffff; --danger: #e74c3c; --success: #2ecc71; --info: #3498db; --dark: #2c3e50; }
+:root { --primary: #ff6a00; --bg: #f0f2f5; --card: #ffffff; --danger: #e74c3c; --success: #2ecc71; --info: #3498db; --dark: #2c3e50; --note: #9b59b6; }
 body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 5px; }
 .card { background: var(--card); border-radius: 12px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 10px; }
 h2 { text-align:center; color:var(--primary); margin:5px 0; font-size: 1.2rem; }
@@ -20,11 +20,11 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 .btn-action { flex: 1; padding: 18px; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; color: #fff; cursor: pointer; }
 .history-card { background: white; border-radius: 10px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .history-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-.btn-sm { flex: 1; min-width: 55px; padding: 10px 2px; font-size: 11px; border-radius: 6px; border: none; color: white; font-weight: bold; }
+.btn-sm { flex: 1; min-width: 50px; padding: 10px 2px; font-size: 11px; border-radius: 6px; border: none; color: white; font-weight: bold; }
 #mapModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 30000; flex-direction: column; }
 #map { flex-grow: 1; width: 100%; }
-#lockOverlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20000; flex-direction: column; justify-content: center; align-items: center; }
 .control-row { padding: 10px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+.note-text { font-size: 12px; color: #666; font-style: italic; background: #f9f9f9; padding: 5px; border-radius: 4px; margin-top: 5px; display: none; }
 </style>
 </head>
 <body>
@@ -36,11 +36,13 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 </div>
 
 <div id="trainingOverlay">
-    <div id="lockOverlay"><div style="border:3px solid var(--primary); padding:30px; border-radius:50px; font-size:1.5rem;">🔒 長按 2 秒解鎖</div></div>
+    <div id="lockOverlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:20000; flex-direction:column; justify-content:center; align-items:center;">
+        <div style="border:3px solid var(--primary); padding:30px; border-radius:50px; font-size:1.5rem;">🔒 長按 2 秒解鎖</div>
+    </div>
     <div id="statusTop" style="font-size:2.5rem; color:var(--success); font-weight:bold;">● 準備中</div>
     <div id="phaseDetail" style="font-size:1.4rem; color:#ffeb3b; margin: 10px 0;">--</div>
     <div id="bigDistance" class="big-val">0.000</div>
-    <div id="kmIndicator" style="font-weight:bold; color:var(--info);">里程計量中...</div>
+    <div id="kmIndicator" style="font-weight:bold; color:var(--info);">公里偵測中...</div>
     <div style="display:flex; width:100%; justify-content:space-around; margin: 15px 0;">
         <div><div style="color:#888; font-size:0.9rem;">配速</div><div id="bigPace" style="font-size:2.5rem; font-family:monospace;">--:--</div></div>
         <div><div style="color:#888; font-size:0.9rem;">時間</div><div id="bigElapsed" style="font-size:2.5rem; font-family:monospace;">00:00</div></div>
@@ -52,22 +54,19 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 </div>
 
 <div class="card">
-  <h2>🏃 跑步教練 V5.3.5</h2>
+  <h2>🏃 跑步教練 V5.3.6</h2>
   <table>
     <thead><tr><th>階段</th><th>BPM</th><th>秒數</th><th>距離</th><th>跑速</th></tr></thead>
     <tbody id="configRows"></tbody>
   </table>
-  
   <div class="control-row">
     <span>循環組數：<input id="loopCount" type="number" oninput="uiUpdate()" style="width:45px;"></span>
     <span style="font-size:12px; text-align:right;">預計：<b id="totalPlanTime">0</b>分 / <b id="totalPlanDist">0</b>km</span>
   </div>
-
   <div class="control-row">
     <span>GPS門檻：<b id="baseThresDisp">0.32</b>m</span>
     <div><button onclick="adjThres(-1)" style="padding:5px 12px;">－</button><button onclick="adjThres(1)" style="padding:5px 12px;">＋</button></div>
   </div>
-
   <div style="display:flex; gap:10px; margin-top:10px;">
       <button onclick="toggleStart(true)" class="btn-action" style="background:var(--primary);">1 達標儲存</button>
       <button onclick="toggleStart(false)" class="btn-action" style="background:var(--info);">2 達標續跑</button>
@@ -77,8 +76,8 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 <div class="card"><strong>歷史紀錄</strong><div id="historyContainer"></div></div>
 
 <script>
-const CONFIG_KEY = 'run_config_v535';
-const HISTORY_KEY = 'run_history_v534'; // 延用 V5.3.4 的歷史 key 以保留紀錄
+const CONFIG_KEY = 'run_config_v536';
+const HISTORY_KEY = 'run_history_v534';
 const PHASES = ["熱身", "間歇", "衝刺", "恢復", "舒緩"];
 let config = { bpm:[180,200,210,190,180], sec:[240,130,130,240,240], dist:[400,400,400,400,400], loops:8, threshold:0.32 };
 let isRunning = false, totalDist = 0, elapsedSec = 0, audioCtx = null, timerId = null, watchId = null, trackPoints = [];
@@ -135,9 +134,7 @@ async function toggleStart(isAuto) {
     await runPhase(0, PHASES[0]); 
     for(let j=0; j<config.loops; j++) {
         if(!isRunning) break;
-        await runPhase(1, `間歇${j+1}`);
-        await runPhase(2, `衝刺${j+1}`);
-        await runPhase(3, `恢復${j+1}`);
+        await runPhase(1, `間歇${j+1}`); await runPhase(2, `衝刺${j+1}`); await runPhase(3, `恢復${j+1}`);
     }
     if(isRunning) await runPhase(4, PHASES[4]); 
     if(isRunning) {
@@ -165,21 +162,12 @@ async function playCycleBeep(bpm) {
     const o = audioCtx.createOscillator(), g = audioCtx.createGain();
     o.connect(g); g.connect(audioCtx.destination);
     o.type = 'square';
-    
     let km = Math.floor(totalDist / 1000);
     document.getElementById('kmIndicator').innerText = `目前第 ${km + 1} 公里 (${km % 2 === 0 ? '正相' : '反轉'})`;
-    
     let isA1Phase = (currentPhaseIdx % 2 === 0);
     if (km % 2 !== 0) isA1Phase = !isA1Phase;
-
-    if (isA1Phase) { 
-        o.frequency.value = 600; 
-        g.gain.setValueAtTime(3.0, audioCtx.currentTime); 
-    } else { 
-        o.frequency.value = 1000; 
-        g.gain.setValueAtTime(1.5, audioCtx.currentTime); 
-    }
-
+    if (isA1Phase) { o.frequency.value = 600; g.gain.setValueAtTime(3.0, audioCtx.currentTime); } 
+    else { o.frequency.value = 1000; g.gain.setValueAtTime(1.5, audioCtx.currentTime); }
     g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
     o.start(); o.stop(audioCtx.currentTime + 0.1);
     await new Promise(r => setTimeout(r, 60000/bpm));
@@ -208,7 +196,7 @@ function stopAndSave() {
     isRunning = false; clearInterval(timerId); navigator.geolocation.clearWatch(watchId);
     if(totalDist > 0.01) {
         const recs = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-        recs.unshift({ id: Date.now(), date: new Date().toLocaleString(), dist: (totalDist/1000).toFixed(3), time: formatTime(elapsedSec), points: trackPoints });
+        recs.unshift({ id: Date.now(), date: new Date().toLocaleString(), dist: (totalDist/1000).toFixed(3), time: formatTime(elapsedSec), points: trackPoints, thres: config.threshold.toFixed(2), note: "" });
         localStorage.setItem(HISTORY_KEY, JSON.stringify(recs));
     }
     location.reload();
@@ -218,16 +206,33 @@ function renderHistory() {
     const recs = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
     document.getElementById('historyContainer').innerHTML = recs.map(r => `
         <div class="history-card">
-            <div style="font-size:11px; color:#888;">📅 ${r.date}</div>
+            <div style="font-size:11px; color:#888; display:flex; justify-content:space-between;">
+                <span>📅 ${r.date}</span>
+                <span>📡 Thres: ${r.thres || '--'}m</span>
+            </div>
             <div style="margin:5px 0;"><b style="font-size:1.2rem; color:var(--primary);">${r.dist} km | ${r.time}</b></div>
+            <div id="note_${r.id}" class="note-text" style="${r.note ? 'display:block' : ''}">${r.note || ''}</div>
             <div class="history-btns">
                 <button class="btn-sm" style="background:var(--info);" onclick="viewTrack(${r.id})">軌跡</button>
+                <button class="btn-sm" style="background:var(--note);" onclick="editNote(${r.id})">備註</button>
                 <button class="btn-sm" style="background:var(--success);" onclick="editDist(${r.id})">修正</button>
                 <button class="btn-sm" style="background:var(--dark);" onclick="exportGPX(${r.id})">匯出</button>
                 <button class="btn-sm" style="background:var(--danger);" onclick="deleteRec(${r.id})">刪除</button>
             </div>
         </div>
     `).join('');
+}
+
+function editNote(id) {
+    let recs = JSON.parse(localStorage.getItem(HISTORY_KEY));
+    let idx = recs.findIndex(r => r.id === id);
+    let oldNote = recs[idx].note || "";
+    let newNote = prompt("輸入備註 (地點/天氣等):", oldNote);
+    if(newNote !== null) {
+        recs[idx].note = newNote;
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(recs));
+        renderHistory();
+    }
 }
 
 function viewTrack(id) {

@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>跑步教練 V5.3.4 - 全功能反轉音量版</title>
+<title>跑步教練 V5.3.5 - 完整門檻回歸版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -24,7 +24,7 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 #mapModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 30000; flex-direction: column; }
 #map { flex-grow: 1; width: 100%; }
 #lockOverlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20000; flex-direction: column; justify-content: center; align-items: center; }
-#kmIndicator { font-weight: bold; color: var(--info); font-size: 0.9rem; margin-top: 5px; }
+.control-row { padding: 10px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
 </style>
 </head>
 <body>
@@ -40,7 +40,7 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
     <div id="statusTop" style="font-size:2.5rem; color:var(--success); font-weight:bold;">● 準備中</div>
     <div id="phaseDetail" style="font-size:1.4rem; color:#ffeb3b; margin: 10px 0;">--</div>
     <div id="bigDistance" class="big-val">0.000</div>
-    <div id="kmIndicator">里程加載中...</div>
+    <div id="kmIndicator" style="font-weight:bold; color:var(--info);">里程計量中...</div>
     <div style="display:flex; width:100%; justify-content:space-around; margin: 15px 0;">
         <div><div style="color:#888; font-size:0.9rem;">配速</div><div id="bigPace" style="font-size:2.5rem; font-family:monospace;">--:--</div></div>
         <div><div style="color:#888; font-size:0.9rem;">時間</div><div id="bigElapsed" style="font-size:2.5rem; font-family:monospace;">00:00</div></div>
@@ -52,16 +52,23 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 </div>
 
 <div class="card">
-  <h2>🏃 跑步教練 V5.3.4</h2>
+  <h2>🏃 跑步教練 V5.3.5</h2>
   <table>
     <thead><tr><th>階段</th><th>BPM</th><th>秒數</th><th>距離</th><th>跑速</th></tr></thead>
     <tbody id="configRows"></tbody>
   </table>
-  <div style="padding:10px 0; display:flex; justify-content:space-between; align-items:center;">
+  
+  <div class="control-row">
     <span>循環組數：<input id="loopCount" type="number" oninput="uiUpdate()" style="width:45px;"></span>
     <span style="font-size:12px; text-align:right;">預計：<b id="totalPlanTime">0</b>分 / <b id="totalPlanDist">0</b>km</span>
   </div>
-  <div style="display:flex; gap:10px;">
+
+  <div class="control-row">
+    <span>GPS門檻：<b id="baseThresDisp">0.32</b>m</span>
+    <div><button onclick="adjThres(-1)" style="padding:5px 12px;">－</button><button onclick="adjThres(1)" style="padding:5px 12px;">＋</button></div>
+  </div>
+
+  <div style="display:flex; gap:10px; margin-top:10px;">
       <button onclick="toggleStart(true)" class="btn-action" style="background:var(--primary);">1 達標儲存</button>
       <button onclick="toggleStart(false)" class="btn-action" style="background:var(--info);">2 達標續跑</button>
   </div>
@@ -70,8 +77,8 @@ input { width: 85%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 <div class="card"><strong>歷史紀錄</strong><div id="historyContainer"></div></div>
 
 <script>
-const CONFIG_KEY = 'run_config_v534';
-const HISTORY_KEY = 'run_history_v534';
+const CONFIG_KEY = 'run_config_v535';
+const HISTORY_KEY = 'run_history_v534'; // 延用 V5.3.4 的歷史 key 以保留紀錄
 const PHASES = ["熱身", "間歇", "衝刺", "恢復", "舒緩"];
 let config = { bpm:[180,200,210,190,180], sec:[240,130,130,240,240], dist:[400,400,400,400,400], loops:8, threshold:0.32 };
 let isRunning = false, totalDist = 0, elapsedSec = 0, audioCtx = null, timerId = null, watchId = null, trackPoints = [];
@@ -107,12 +114,15 @@ function uiUpdate() {
         document.getElementById(`pace_${i}`).innerText = isFinite(pSec) ? formatTime(pSec) : "--";
     });
     config.loops = +document.getElementById('loopCount').value;
+    document.getElementById('baseThresDisp').innerText = config.threshold.toFixed(2);
     let t = config.sec[0] + ((config.sec[1]+config.sec[2]+config.sec[3])*config.loops) + config.sec[4];
     let d = config.dist[0] + ((config.dist[1]+config.dist[2]+config.dist[3])*config.loops) + config.dist[4];
     document.getElementById('totalPlanTime').innerText = (t/60).toFixed(1);
     document.getElementById('totalPlanDist').innerText = (d/1000).toFixed(2);
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
 }
+
+function adjThres(v) { config.threshold = Math.max(0.01, config.threshold + v*0.01); uiUpdate(); }
 
 async function toggleStart(isAuto) {
     isRunning = true; trackPoints = [];
@@ -157,7 +167,7 @@ async function playCycleBeep(bpm) {
     o.type = 'square';
     
     let km = Math.floor(totalDist / 1000);
-    document.getElementById('kmIndicator').innerText = `目前第 ${km + 1} 公里 (節拍已${km % 2 === 0 ? '正相' : '反轉'})`;
+    document.getElementById('kmIndicator').innerText = `目前第 ${km + 1} 公里 (${km % 2 === 0 ? '正相' : '反轉'})`;
     
     let isA1Phase = (currentPhaseIdx % 2 === 0);
     if (km % 2 !== 0) isA1Phase = !isA1Phase;

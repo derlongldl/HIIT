@@ -2,13 +2,13 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>跑步教練 V5.5.9 - 中文兼容穩定版</title>
+<title>跑步教練 V5.6.0 - 模式切換修復版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root { --primary: #ff6a00; --bg: #f0f2f5; --card: #ffffff; --danger: #e74c3c; --success: #2ecc71; --info: #3498db; --dark: #2c3e50; --note: #9b59b6; }
-body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 5px; }
+body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 5px; overflow-x: hidden; }
 .card { background: var(--card); border-radius: 12px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 10px; }
 h2 { text-align:center; color:var(--primary); margin:5px 0; font-size: 1.2rem; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
@@ -19,8 +19,11 @@ input { width: 90%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 .big-val { font-size: 6rem; font-weight: 900; color: var(--primary); font-family: monospace; line-height: 1; margin: 10px 0; }
 .btn-action { padding: 18px; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; color: #fff; cursor: pointer; }
 .btn-block { width: 100%; display: block; }
-#modeOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 50000; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; }
-.btn-mode { width: 80%; padding: 40px 20px; font-size: 1.5rem; font-weight: bold; color: white; border: none; border-radius: 20px; }
+
+/* 模式選擇覆蓋層 - 提高層級確保不留白 */
+#modeOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; }
+.btn-mode { width: 80%; padding: 40px 20px; font-size: 1.5rem; font-weight: bold; color: white; border: none; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+
 #trainingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
 .bottom-bar { position: absolute; bottom: 30px; left: 20px; right: 20px; }
 #mapModal, #noteModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 30000; justify-content: center; align-items: center; }
@@ -58,7 +61,7 @@ input { width: 90%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 </div>
 
 <div class="card">
-  <h2 id="appTitle">跑步教練 V5.5.9</h2>
+  <h2 id="appTitle">跑步教練 V5.6.0</h2>
   <div id="intervalTable" style="display:none;">
       <table>
         <thead><tr><th>階段</th><th>BPM</th><th>秒數</th><th>距離(m)</th><th>跑速</th></tr></thead>
@@ -87,7 +90,7 @@ input { width: 90%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
       <button onclick="toggleStart(true)" class="btn-action" style="background:var(--primary); flex:1;">1 達標儲存</button>
       <button onclick="toggleStart(false)" class="btn-action" style="background:var(--info); flex:1;">2 達標續跑</button>
   </div>
-  <button onclick="resetMode()" style="width:100%; margin-top:15px; padding:5px; background:none; border:none; color:#888; text-decoration:underline; font-size:12px; cursor:pointer;">↺ 切換訓練模式</button>
+  <button onclick="resetMode()" style="width:100%; margin-top:15px; padding:10px; background:#eee; border:none; border-radius:8px; color:#555; font-size:13px; cursor:pointer;">↺ 切換訓練模式</button>
 </div>
 
 <div class="card"><strong>歷史紀錄</strong><div id="historyContainer"></div></div>
@@ -103,6 +106,7 @@ let config = { bpm:[180,205,215,195,180], sec:[180,60,60,120,180], dist:[400,400
 let startNote = { location: "未偵測", weather: "未偵測" };
 let lastKmDist = 0, lastKmSec = 0;
 
+// 修復後的模式選擇
 function selectMode(m) {
     currentMode = m;
     localStorage.setItem('last_mode_v5', m);
@@ -112,7 +116,15 @@ function selectMode(m) {
     uiUpdate();
 }
 
-function resetMode() { localStorage.removeItem('last_mode_v5'); document.getElementById('modeOverlay').style.display = 'flex'; }
+// 修復後的重設模式
+function resetMode() { 
+    localStorage.removeItem('last_mode_v5');
+    // 先隱藏所有表格
+    document.getElementById('intervalTable').style.display = 'none';
+    document.getElementById('generalTable').style.display = 'none';
+    // 顯示覆蓋層
+    document.getElementById('modeOverlay').style.display = 'flex'; 
+}
 
 function init() {
     const saved = localStorage.getItem(CONFIG_KEY);
@@ -130,9 +142,8 @@ function init() {
 
 function fillFormFromConfig() {
     PHASES.forEach((p, i) => {
-        if(document.getElementById(`bpm_${i}`)) document.getElementById(`bpm_${i}`).value = config.bpm[i];
-        if(document.getElementById(`sec_${i}`)) document.getElementById(`sec_${i}`).value = config.sec[i];
-        if(document.getElementById(`dist_${i}`)) document.getElementById(`dist_${i}`).value = config.dist[i];
+        let b = document.getElementById(`bpm_${i}`), s = document.getElementById(`sec_${i}`), d = document.getElementById(`dist_${i}`);
+        if(b) b.value = config.bpm[i]; if(s) s.value = config.sec[i]; if(d) d.value = config.dist[i];
     });
     if(document.getElementById('loopCount')) document.getElementById('loopCount').value = config.loops;
     if(document.getElementById('genBPM')) document.getElementById('genBPM').value = config.genBPM;
@@ -243,7 +254,6 @@ function stopAndSave() {
     isRunning = false; clearInterval(timerId); timerId = null; navigator.geolocation.clearWatch(watchId);
     if(totalDist > 0) {
         const recs = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-        // 安全編碼目前的 config 並存入備註
         const configData = JSON.stringify({mode:currentMode, ...config});
         const configStr = `[CONFIG:${encodeURIComponent(configData)}]`;
         recs.unshift({ id: Date.now(), date: new Date().toLocaleString(), dist: (totalDist/1000).toFixed(3), time: formatTime(elapsedSec), points: trackPoints, mode: currentMode, savedConfig: JSON.parse(JSON.stringify(config)), note: `📍地點：${startNote.location}\n🌡氣候：${startNote.weather}\n⚙️門檻：${config.threshold.toFixed(2)}m\n${configStr}` });
@@ -270,7 +280,7 @@ function renderHistory() {
                 </div>
             </div>
         `).join('');
-    } catch(e) { console.error("History Render Error", e); }
+    } catch(e) {}
 }
 
 function loadFromNote(id) {
@@ -291,10 +301,10 @@ function loadFromNote(id) {
             selectMode(mode || 'interval');
             fillFormFromConfig();
             uiUpdate();
-            alert(`✅ 已還原設定！`);
+            alert(`✅ 已還原該筆紀錄設定！`);
             window.scrollTo(0, 0);
         }
-    } catch (e) { alert("還原失敗，數據損壞。"); }
+    } catch (e) { alert("還原失敗。"); }
 }
 
 function exportGPX(id) {

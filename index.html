@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>跑步教練 V5.5.7 - 範本同步修正版</title>
+<title>跑步教練 V5.5.8 - 備註連動還原版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -19,18 +19,14 @@ input { width: 90%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
 .big-val { font-size: 6rem; font-weight: 900; color: var(--primary); font-family: monospace; line-height: 1; margin: 10px 0; }
 .btn-action { padding: 18px; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; color: #fff; cursor: pointer; }
 .btn-block { width: 100%; display: block; }
-
 #modeOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 50000; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; }
 .btn-mode { width: 80%; padding: 40px 20px; font-size: 1.5rem; font-weight: bold; color: white; border: none; border-radius: 20px; }
-
 #trainingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
 .bottom-bar { position: absolute; bottom: 30px; left: 20px; right: 20px; }
-
 #mapModal, #noteModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 30000; justify-content: center; align-items: center; }
 #map { width: 100%; height: 80%; background: white; }
 .note-box { background: white; width: 85%; border-radius: 15px; padding: 20px; color: #333; }
 #noteArea { width: 100%; height: 120px; margin-top: 10px; padding: 8px; font-size: 14px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-
 .history-card { background: white; border-radius: 10px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); }
 .history-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .btn-sm { flex: 1; min-width: 55px; padding: 8px 2px; font-size: 11px; border-radius: 6px; border: none; color: white; font-weight: bold; }
@@ -55,16 +51,14 @@ input { width: 90%; padding: 8px 0; text-align: center; border: 1px solid #ccc; 
     <div id="soundIndicator" style="color:var(--info); font-size:0.9rem;">等待 GPS...</div>
     <div style="display:flex; width:100%; justify-content:space-around; margin: 10px 0; text-align:center;">
         <div><div style="color:#888; font-size:0.8rem;">平均配速</div><div id="bigPaceAvg" style="font-size:1.8rem; font-family:monospace;">--:--</div></div>
-        <div><div style="color:#ffeb3b; font-size:0.8rem;">當前公里配速</div><div id="bigPaceCur" style="font-size:1.8rem; font-family:monospace; color:#ffeb3b;">--:--</div></div>
+        <div><div style="color:#ffeb3b; font-size:0.8rem;">公里配速</div><div id="bigPaceCur" style="font-size:1.8rem; font-family:monospace; color:#ffeb3b;">--:--</div></div>
         <div><div style="color:#888; font-size:0.8rem;">跑步時間</div><div id="bigElapsed" style="font-size:1.8rem; font-family:monospace;">00:00</div></div>
     </div>
-    <div class="bottom-bar">
-        <button class="btn-action btn-block" style="background:var(--danger);" onclick="stopAndSave()">■ 結束並儲存紀錄</button>
-    </div>
+    <div class="bottom-bar"><button class="btn-action btn-block" style="background:var(--danger);" onclick="stopAndSave()">■ 結束並儲存紀錄</button></div>
 </div>
 
 <div class="card">
-  <h2 id="appTitle">跑步教練 V5.5.7</h2>
+  <h2 id="appTitle">跑步教練 V5.5.8</h2>
   <div id="intervalTable" style="display:none;">
       <table>
         <thead><tr><th>階段</th><th>BPM</th><th>秒數</th><th>距離(m)</th><th>跑速</th></tr></thead>
@@ -118,10 +112,7 @@ function selectMode(m) {
     uiUpdate();
 }
 
-function resetMode() { 
-    localStorage.removeItem('last_mode_v5');
-    document.getElementById('modeOverlay').style.display = 'flex'; 
-}
+function resetMode() { localStorage.removeItem('last_mode_v5'); document.getElementById('modeOverlay').style.display = 'flex'; }
 
 function init() {
     const saved = localStorage.getItem(CONFIG_KEY);
@@ -139,8 +130,9 @@ function init() {
 
 function fillFormFromConfig() {
     PHASES.forEach((p, i) => {
-        let b = document.getElementById(`bpm_${i}`), s = document.getElementById(`sec_${i}`), d = document.getElementById(`dist_${i}`);
-        if(b) b.value = config.bpm[i]; if(s) s.value = config.sec[i]; if(d) d.value = config.dist[i];
+        if(document.getElementById(`bpm_${i}`)) document.getElementById(`bpm_${i}`).value = config.bpm[i];
+        if(document.getElementById(`sec_${i}`)) document.getElementById(`sec_${i}`).value = config.sec[i];
+        if(document.getElementById(`dist_${i}`)) document.getElementById(`dist_${i}`).value = config.dist[i];
     });
     if(document.getElementById('loopCount')) document.getElementById('loopCount').value = config.loops;
     if(document.getElementById('genBPM')) document.getElementById('genBPM').value = config.genBPM;
@@ -179,13 +171,10 @@ async function toggleStart(isAuto) {
         document.getElementById('bigElapsed').innerText = formatTime(elapsedSec);
         if(totalDist > 5) {
             document.getElementById('bigPaceAvg').innerText = formatTime(Math.floor(elapsedSec/(totalDist/1000)));
-            let curDiffDist = (totalDist - lastKmDist) / 1000;
-            let curDiffSec = elapsedSec - lastKmSec;
+            let curDiffDist = (totalDist - lastKmDist) / 1000, curDiffSec = elapsedSec - lastKmSec;
             if(curDiffDist > 0.005) document.getElementById('bigPaceCur').innerText = formatTime(Math.floor(curDiffSec/curDiffDist));
         }
-        if (totalDist <= lastDistCheck && elapsedSec > 10) { 
-            distStallCount++; if (distStallCount >= 5) { triggerAlarm(); distStallCount = 0; }
-        } else { lastDistCheck = totalDist; distStallCount = 0; }
+        if (totalDist <= lastDistCheck && elapsedSec > 10) { distStallCount++; if (distStallCount >= 5) { triggerAlarm(); distStallCount = 0; } } else { lastDistCheck = totalDist; distStallCount = 0; }
     }, 1000);
     startGPS();
     if(currentMode === 'interval') {
@@ -207,14 +196,7 @@ async function toggleStart(isAuto) {
             if(isAuto && totalDist >= config.genDist) break;
         }
     }
-    if(isRunning) {
-        if(isAuto) { stopAndSave(); } 
-        else {
-            document.getElementById('statusTop').innerText = "● 達標續跑中";
-            let lastBPM = (currentMode === 'interval') ? config.bpm[4] : config.genBPM;
-            while(isRunning) { await playBeep(lastBPM); }
-        }
-    }
+    if(isRunning) { if(isAuto) { stopAndSave(); } else { document.getElementById('statusTop').innerText = "● 達標續跑中"; let lastBPM = (currentMode === 'interval') ? config.bpm[4] : config.genBPM; while(isRunning) { await playBeep(lastBPM); } } }
 }
 
 async function runPhase(label, sec, bpm) {
@@ -222,24 +204,16 @@ async function runPhase(label, sec, bpm) {
     document.getElementById('statusTop').innerText = "● " + label;
     currentSoundType = !currentSoundType;
     let end = Date.now() + sec * 1000;
-    while(Date.now() < end && isRunning) {
-        let rem = Math.max(0, Math.round((end - Date.now())/1000));
-        document.getElementById('phaseDetail').innerText = `節拍:${bpm} | 剩:${rem}s`;
-        await playBeep(bpm);
-    }
+    while(Date.now() < end && isRunning) { let rem = Math.max(0, Math.round((end - Date.now())/1000)); document.getElementById('phaseDetail').innerText = `節拍:${bpm} | 剩:${rem}s`; await playBeep(bpm); }
 }
 
 async function playBeep(bpm) {
     if(!isRunning) return;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.connect(g); g.connect(audioCtx.destination);
-    let km = Math.floor(totalDist / 1000);
-    if (km > (lastKmDist/1000)) { lastKmDist = km * 1000; lastKmSec = elapsedSec; }
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+    let km = Math.floor(totalDist / 1000); if (km > (lastKmDist/1000)) { lastKmDist = km * 1000; lastKmSec = elapsedSec; }
     let isHigh = (km % 2 === 0) ? currentSoundType : !currentSoundType;
     o.type = 'square'; o.frequency.setValueAtTime(isHigh ? 1150 : 850, audioCtx.currentTime);
-    g.gain.setValueAtTime(isHigh ? 0.3 : 0.5, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    g.gain.setValueAtTime(isHigh ? 0.3 : 0.5, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
     o.start(); o.stop(audioCtx.currentTime + 0.1);
     document.getElementById('soundIndicator').innerText = `第 ${km+1}k | ${isHigh?'高音':'低音'} | 里程:${(totalDist/1000).toFixed(2)}k`;
     await new Promise(r => setTimeout(r, 60000/bpm));
@@ -267,7 +241,9 @@ function stopAndSave() {
     isRunning = false; clearInterval(timerId); timerId = null; navigator.geolocation.clearWatch(watchId);
     if(totalDist > 0) {
         const recs = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-        recs.unshift({ id: Date.now(), date: new Date().toLocaleString(), dist: (totalDist/1000).toFixed(3), time: formatTime(elapsedSec), points: trackPoints, mode: currentMode, savedConfig: JSON.parse(JSON.stringify(config)), note: `📍地點：${startNote.location}\n🌡氣候：${startNote.weather}\n⚙️GPS門檻：${config.threshold.toFixed(2)}m` });
+        // 將目前的 config 轉成字串存入備註，確保還原時百分之百成功
+        const configStr = `[CONFIG:${btoa(JSON.stringify({mode:currentMode, ...config}))}]`;
+        recs.unshift({ id: Date.now(), date: new Date().toLocaleString(), dist: (totalDist/1000).toFixed(3), time: formatTime(elapsedSec), points: trackPoints, mode: currentMode, savedConfig: JSON.parse(JSON.stringify(config)), note: `📍地點：${startNote.location}\n🌡氣候：${startNote.weather}\n⚙️門檻：${config.threshold.toFixed(2)}m\n${configStr}` });
         localStorage.setItem(HISTORY_KEY, JSON.stringify(recs));
     }
     document.getElementById('trainingOverlay').style.display = 'none';
@@ -282,7 +258,7 @@ function renderHistory() {
             <div style="font-size:11px; color:#666; margin:5px 0; white-space:pre-wrap;">${r.note || '無'}</div>
             <div class="history-btns">
                 <button class="btn-sm" style="background:var(--info);" onclick="viewTrack(${r.id})">軌跡</button>
-                <button class="btn-sm" style="background:var(--primary);" onclick="loadTemplate(${r.id})">載入</button>
+                <button class="btn-sm" style="background:var(--primary);" onclick="loadFromNote(${r.id})">載入</button>
                 <button class="btn-sm" style="background:var(--note);" onclick="editNote(${r.id})">備註</button>
                 <button class="btn-sm" style="background:var(--success);" onclick="editDist(${r.id})">修正</button>
                 <button class="btn-sm" style="background:var(--dark);" onclick="exportGPX(${r.id})">匯出</button>
@@ -292,16 +268,36 @@ function renderHistory() {
     `).join('');
 }
 
-function loadTemplate(id) {
+// 核心載入函數：從備註中提取並還原
+function loadFromNote(id) {
     const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
     const r = history.find(x => x.id === id);
-    if (r && r.savedConfig) {
-        config = JSON.parse(JSON.stringify(r.savedConfig));
-        selectMode(r.mode || 'interval');
-        fillFormFromConfig();
-        uiUpdate();
-        alert(`已載入設定！模式：${r.mode === 'interval' ? '間歇' : '一般'}`);
-        window.scrollTo(0, 0);
+    if (!r) return;
+    
+    try {
+        let targetConfig = null;
+        // 優先嘗試從備註字串解析
+        const match = r.note.match(/\[CONFIG:(.+?)\]/);
+        if (match) {
+            targetConfig = JSON.parse(atob(match[1]));
+        } else if (r.savedConfig) {
+            // 備註沒找到才用舊的物件欄位
+            targetConfig = {mode: r.mode, ...r.savedConfig};
+        }
+
+        if (targetConfig) {
+            const { mode, ...pureConfig } = targetConfig;
+            config = pureConfig;
+            selectMode(mode || 'interval');
+            fillFormFromConfig();
+            uiUpdate();
+            alert(`✅ 已從備註還原設定！\n模式：${mode === 'interval' ? '間歇' : '一般'}`);
+            window.scrollTo(0, 0);
+        } else {
+            alert("❌ 此筆紀錄不含可還原的設定值。");
+        }
+    } catch (e) {
+        alert("還原失敗，數據格式不正確。");
     }
 }
 
